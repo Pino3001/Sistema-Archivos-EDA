@@ -1,0 +1,24 @@
+	CD nombreDirectorio
+	MKDIR nombreDirectorio
+	RMDIR nombreDirectorio
+	MOVE nombre directorioDestino
+	DIR parametro
+	CREATEFILE nombreArchivo
+	DELETE nombreArchivo
+	ATTRIB nombreArchivo, parametro
+	IC nombreArchivo texto
+	IF nombreArchivo texto
+	DC nombreArchivo k
+	DF nombreArchivo k
+	TYPE nombreArchivo
+	SEARCH nombreArchivo texto
+	REPLACE nombreArchivo texto1 texto2
+	SALIR
+
+>  - NO IMPLEMENTADA
+>  - NO IMPLEMENTADA
+>  - NO IMPLEMENTADA
+>  - NO IMPLEMENTADA
+> 
+
+ - CHAUU!!!!
