@@ -13,11 +13,23 @@
 #define MAX_NOM_DIR 15
 #define MAX_EXT_ARCH 3
 
+enum _retorno
+{
+    OK,
+    ERROR,
+    NO_IMPLEMENTADA
+};
 
-enum _retorno{ OK, ERROR, NO_IMPLEMENTADA};
+enum _atributo {
+    Lectura,
+    Escritura,
+    Lectura_Escritura
+};
+
 typedef enum _retorno TipoRet;
 
-typedef char* Cadena;
+typedef enum _atributo Atributo;
 
+typedef char *Cadena;
 
 #endif
