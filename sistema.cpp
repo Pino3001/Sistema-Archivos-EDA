@@ -158,11 +158,11 @@ TipoRet CREATEFILE(Sistema &s, Cadena nombreArchivo)
 	{ // Separo la extencion y nombre del parametro.
 		Cadena nombre = strtok(nombreArchivo, ".");
 		Cadena ext = strtok(NULL, ".");
-		if (nombre == NULL || ext == NULL)
+		if (nombre == NULL)
 		{
-			cout << "No se ingreso una extencion. \n";
+			cout << "El nombre del archivo no a sigo ingresado! \n";
 			return ERROR;
-		}
+		}	
 		crear_archivo(nombre, ext, s->actual);
 		return OK;
 	}
@@ -180,7 +180,7 @@ TipoRet DELETE(Sistema &s, Cadena nombreArchivo)
 		cout << "No se ingreso una extencion. \n";
 		return ERROR;
 	}
-	if (!destruir_archivo_directorio(nombre, ext, s->actual))
+	if (!buscar_destruir_archivo_(nombre, ext, s->actual))
 	{
 		return ERROR;
 	}
@@ -243,13 +243,22 @@ TipoRet IF(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Agrega un texto al final del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-	return NO_IMPLEMENTADA;
+	if (insertar_texto_final(nombreArchivo, texto, s->actual))
+	{
+		return OK;
+	}
+	else
+	{
+		return ERROR;
+	}
 }
 
 TipoRet DC(Sistema &s, Cadena nombreArchivo, int k)
 {
 	// Elimina los a lo sumo K primeros caracteres del archivo parámetro.
 	// Para mas detalles ver letra.
+
+	
 	return NO_IMPLEMENTADA;
 }
 

@@ -41,16 +41,11 @@ directorio obtener_subdirectorio(Cadena nombre, directorio dir);
 // Elimina el directorio con el nombre dado.
 bool remover_directorio(Cadena nombre, directorio dir);
 
+// Devuelve el directorio primero/anterior buscado, NULL en caso de no encontrarse el directorio.
+lista_dir buscar_directorio_lista(Cadena nombre, lista_dir ld);
+
 // Mueve un subdirectorio o archivo a una destino dado.
-bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio dirRaiz);
-
-// Engancho una nueva lista de directorios a fileSwap, quitandola de dirAnterior.
-void swap_archivo_primero(directorio dirAnterior, lista_file fileSwap, directorio destino);
-
-// Engancho una nueva lista de directorios a fileSwap, quitandola de dirAnterior.
-void swap_archivos(lista_file fileAnterior, lista_file fileSwap, directorio destino);
-
-
+bool mover_elemento(Cadena nombre, Cadena nomDestino, directorio dir, directorio dirRaiz);
 
 // Me muevo al directorio final de la cadena de directorios dada como paramentro.
 directorio mover_puntero_a_destino(Cadena dirDestino, directorio dirRaiz);
@@ -58,10 +53,12 @@ directorio mover_puntero_a_destino(Cadena dirDestino, directorio dirRaiz);
 // Devuelvo un puntero al directorio solicitado.
 directorio ir_directorio(directorio dir, Cadena nombreDir);
 
-// Destruye el archivo dado.
-bool destruir_cualquier_archivo(Cadena nombre, lista_file lf, directorio dir);
+bool pertenece_al_path(Cadena pathDestino, directorio dir, directorio aBorrar);
 
-bool destruir_archivo_directorio(Cadena nombre, Cadena ext, directorio dir);
+// Destruye el archivo dado.
+bool remover_archivo(Cadena nombre, lista_file lf, directorio dir);
+
+bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir);
 
 // Imprime todos los subdirectorios de dir en forma ordenada y recursivamente.
 void imprimir_directorio(directorio dir);
@@ -82,4 +79,6 @@ void crear_archivo(Cadena nombre, Cadena ext, directorio dir);
 bool cambiar_atributo(Cadena nombre, Cadena ext, Atributo atr, directorio dir);
 
 bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir);
+
+bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir);
 #endif

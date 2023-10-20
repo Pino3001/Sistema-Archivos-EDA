@@ -209,7 +209,7 @@ bool remover_directorio(Cadena nombre, directorio dir)
 	{ // Busco el nombre dentro de la lista de directorios.
 		while (ld != NULL && strcmp(ld->dir->nombrecarpeta, nombre) != 0)
 		{
-			aux = ld;
+			aux = ld; // aux pasa a ser ld anterior.
 			ld = ld->sig;
 		}
 		if (ld == NULL)
@@ -235,7 +235,7 @@ bool remover_directorio(Cadena nombre, directorio dir)
 }
 
 // Devuelve el directorio primero/anterior buscado, NULL en caso de no encontrarse el directorio.
-lista_dir buscar_en_lista(Cadena nombre, lista_dir ld)
+lista_dir buscar_directorio_lista(Cadena nombre, lista_dir ld)
 {
 	// Si el nombre es el primero de la lista, devuelvo el primero y no el anterior.
 	//  ld puede ser NULL.
@@ -306,11 +306,11 @@ lista_file buscar_archivo_en_lista(Cadena nombreArchivo, lista_file fl)
 }
 
 // Mueve un subdirectorio o archivo a una destino dado.
-bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio dirRaiz)
+bool mover_elemento(Cadena nombre, Cadena nomDestino, directorio dirActual, directorio dirRaiz)
 {
 	// Retorna true en caso de que la operacion se haya realizado correctamenete.
-	lista_dir ld = dir->subdirectorios;
-	directorio dDestino = mover_puntero_a_destino(dirDestino, dirRaiz);
+	lista_dir ld = dirActual->subdirectorios;
+	directorio dDestino = mover_puntero_a_destino(nomDestino, dirRaiz);
 	if (dDestino == NULL)
 	{
 		// No se encontro el directorio destino.
@@ -319,13 +319,17 @@ bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio
 	}
 	else
 	{
-		lista_dir dAux = buscar_en_lista(nombre, dir->subdirectorios);
+		lista_dir dAux = buscar_directorio_lista(nombre, dirActual->subdirectorios);
 		if (dAux != NULL)
 		{
 			// Encontre un subdirectorio con el nombre dado.
 			// Procedo a buscar en el directorio destino que no exista uno con el mismo nombre.
-			lista_dir dirD = buscar_en_lista(nombre, dDestino->subdirectorios);
-			if (dirD != NULL)
+			lista_dir dirD = buscar_directorio_lista(nombre, dDestino->subdirectorios);
+			if (pertenece_al_path(nomDestino, dirActual, dirD->dir))
+			{
+				return false;
+			}
+			else if (dirD != NULL)
 			{
 				// Se encontro un directorio con el mismo nombre en el destino.
 				// Se elimina ese directorio dentro del directorio destino.
@@ -335,8 +339,8 @@ bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio
 			if (strcmp(dAux->dir->nombrecarpeta, nombre) == 0)
 			{
 				lista_dir d = dDestino->subdirectorios;
-				lista_dir dirSwap = dir->subdirectorios;
-				dir->subdirectorios = dir->subdirectorios->sig;
+				lista_dir dirSwap = dirActual->subdirectorios;
+				dirActual->subdirectorios = dirActual->subdirectorios->sig;
 				dDestino->subdirectorios = dirSwap;
 				dDestino->subdirectorios->sig = d;
 				dirSwap->dir->padre = dDestino;
@@ -356,7 +360,7 @@ bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio
 		else
 		{
 			// No encontre directorios con el nombre dado. Busco archivos.
-			lista_file fl = dir->archivos;
+			lista_file fl = dirActual->archivos;
 			lista_file fAux = buscar_archivo_en_lista(nombre, fl);
 			if (fAux != NULL)
 			{
@@ -366,15 +370,15 @@ bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio
 				{
 					// Existe un archivo con el mismo nombre dentro del directorio destino.
 					// Destruyo ese archivo.
-					destruir_cualquier_archivo(nombre, fileD, dDestino); // fileD es el anterior del que se desea borrar.
+					remover_archivo(nombre, fileD, dDestino); // fileD es el anterior del que se desea borrar.
 				}
 				if (strcmp(fAux->archi->nombreArchivo, nombre) == 0)
 				{
 					// Procedo a enganchar.
 					// El archivo a eliminar es el primero de la lista.
 					lista_file f = dDestino->archivos;
-					lista_file dirSwap = dir->archivos;
-					dir->archivos = dir->archivos->sig;
+					lista_file dirSwap = dirActual->archivos;
+					dirActual->archivos = dirActual->archivos->sig;
 					dDestino->archivos = dirSwap;
 					dDestino->archivos->sig = f;
 					return true;
@@ -396,26 +400,6 @@ bool mover_elemento(Cadena nombre, Cadena dirDestino, directorio dir, directorio
 			}
 		}
 	}
-}
-
-// Engancho una nueva lista de directorios a fileSwap, quitandola de dirAnterior.
-void swap_archivo_primero(directorio dirAnterior, lista_file fileSwap, directorio destino)
-{
-	// Pre-condicion: El elemento a quitar de dirAnterior es el primer elemento de la lista de archivos.
-	lista_file f = destino->archivos;
-	dirAnterior->archivos = fileSwap->sig;
-	destino->archivos = fileSwap;
-	destino->archivos->sig = f;
-}
-
-// Engancho una nueva lista de directorios a fileSwap, quitandola de dirAnterior.
-void swap_archivos(lista_file fileAnterior, lista_file fileSwap, directorio destino)
-{
-	// Pre-condicion: El elemento a quitar de dirAnterior no es el primer elemento de la lista de archivos.
-	lista_file f = destino->archivos;
-	fileAnterior->sig = fileSwap->sig;
-	destino->archivos = fileSwap;
-	destino->archivos->sig = f;
 }
 
 // Me muevo al directorio final de la cadena de directorios dada como paramentro.
@@ -461,38 +445,85 @@ directorio ir_directorio(directorio dir, Cadena nombreDir)
 	return ld->dir;
 }
 
-// Destruye el archivo dado, sin importar el Atributo.
-bool destruir_cualquier_archivo(Cadena nombre, lista_file lf, directorio dir)
+bool pertenece_al_path(Cadena pathDestino, directorio dir, directorio aBorrar)
 {
-	// Pre-condicion: lf no es NULL.
-	lista_file lista;
-	lista = buscar_archivo_en_lista(nombre, lf);
+	Cadena pathActual = new char[100];
+	pathActual = obtener_path(pathActual, dir);
+	strcat(pathActual, "/");
+	strcat(pathActual, aBorrar->nombrecarpeta);
+	unsigned int lenActual = strlen(pathActual);
+	unsigned int lenDestino = strlen(pathDestino);
 
-	if (lista == NULL)
-	{ // Si lista es NULL, no se encontro el archivo.
-		cout << "NO existe el archivo.\n";
+	if (pathActual > pathDestino)
+	{
 		return false;
 	}
-	else if (dir->archivos == lf->sig)
-	{ // Engancha la lista si es el primero de la lista.
+	else if (strncmp(pathActual, pathDestino, lenDestino) == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+// Destruye el archivo dado, sin importar el Atributo.
+bool remover_archivo(Cadena nombre, lista_file lf, directorio dir)
+{
+	// Pre-condicion: lf no es NULL.
+	// lf puede ser el anterior a borrar o el primero, compruebo cual es el caso y ejecuto la accion de borrar en base a eso.
+	if (lf->archi->atr == Lectura)
+	{
+		cout << "No es posible eliminar el archivo " << lf->archi->nombreArchivo << ", ya que es de solo lectura. \n";
+		return false;
+	}
+	else if (strcmp(lf->archi->nombreArchivo, nombre) == 0)
+	{
+		if (lf->archi->atr == Lectura)
+		{
+			cout << "No es posible eliminar el archivo " << lf->archi->nombreArchivo << ", ya que es de solo lectura. \n";
+			return false;
+		}
+		// Engancha la lista si es el primero de la lista.
 		dir->archivos = lf->sig->sig;
 		lf->archi = destruir_archivo(lf->archi);
 		delete lf->sig;
 		return true;
 	}
 	else
-	{ // Engancha la lista si no es el primero.
+	{
+		if (lf->sig->archi->atr == Lectura)
+		{
+			cout << "No es posible eliminar el archivo " << lf->archi->nombreArchivo << ", ya que es de solo lectura. \n";
+			return false;
+		}
+		// Engancha la lista si no es el primero.
 		// Lista es el miembro anterior a destruir de la lista.
 		lista_file archiDestruir = lf->sig;
-		lf->sig = lista->sig->sig;
+		lf->sig = lf->sig->sig;
 		archiDestruir->archi = destruir_archivo(archiDestruir->archi);
 		delete archiDestruir;
 		return true;
 	}
 }
 
+Cadena obtener_path(Cadena nombre, directorio dir)
+{
+	if (dir == NULL)
+	{
+		return nombre;
+	}
+	if (dir->padre == NULL)
+	{
+		strcat(nombre, dir->nombrecarpeta);
+		return nombre;
+	}
+	imprimir_path(dir->padre);
+	strcat(nombre, "/");
+	strcat(nombre, dir->nombrecarpeta);
+}
 // Destruye el archivo dado.
-bool destruir_archivo_directorio(Cadena nombre, Cadena ext, directorio dir)
+bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir)
 {
 
 	lista_file lf = dir->archivos;
@@ -618,6 +649,12 @@ void crear_archivo(Cadena nombre, Cadena ext, directorio dir)
 	f->nombreArchivo = new char(MAX_NOM_ARCH);
 	strcpy(f->nombreArchivo, nombre);
 	f->extencion = new char(MAX_EXT_ARCH);
+	if(ext == NULL){
+		strcpy(f->extencion, ".txt");
+	}
+	else{
+		strcpy(f->extencion, ext);
+	}
 	strcpy(f->extencion, ext);
 	f->atr = Lectura_Escritura;
 	f->texto = NULL;
@@ -650,61 +687,15 @@ bool cambiar_atributo(Cadena nombre, Cadena ext, Atributo atr, directorio dir)
 	}
 }
 
-// Genera una lista de directorios ordenada, ordenando tambien sus sub-directorios.
-/*lista_dir ordenar_lista(lista_dir ld)
-{
-	mientras el sig de la lista es != NUUL
-										  aux es igual al anterior
-											  key es igual al actual
-												  mientras el anterior sea mayor al siguiente
-													  el anterior pasa a ser el siguiente
-														  el siguiente se transforma en el anterior
-															  muevo el anterior
-
-																  lista_file aux if (lf != NULL)
-	{
-		while (lf->sig != NULL)
-		{
-			aux = lf;
-			key = lf->sig;
-			while (lf->sig != NULL && aux->archivo->nombre > key->archivo->nombre)
-			{
-				aux->sig = aux;
-				lf = lf->sig;
-			}
-		}
-	}
-
-	void insertion_sort(int arr[], int tope, int &comparaciones)
-	{
-		// Ordena arr utilizando el algoritmo Insertion Sort.
-		if (tope > 1)
-		{
-			for (int i = 1; i < tope; i++)
-			{
-				int j = i - 1;
-				int key = arr[i];
-				comparaciones++;
-				while (j >= 0 && arr[j] > key)
-				{
-					comparaciones++;
-					arr[j + 1] = arr[j];
-					j--;
-				}
-				arr[j + 1] = key;
-			}
-		}
-	}
-}
-*/
 bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
 {
 
 	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
 	if (fl != NULL)
 	{
-		if (fl == dir->archivos)
+		if (strcmp(fl->archi->nombreArchivo, nombreArchivo) == 0)
 		{
+			// Es el primero de la lista.
 			if (fl->archi->atr == Lectura_Escritura)
 			{
 				Cadena txt = new char[MAX_COMANDO];
@@ -720,11 +711,59 @@ bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
 		}
 		else
 		{
+			// NO es el primero de la lista.
 			if (fl->sig->archi->atr == Lectura_Escritura)
 			{
 				Cadena txt = new char[MAX_COMANDO];
 				strcpy(texto, txt);
 				fl->sig->archi->texto = txt;
+				return true;
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura. \n";
+				return false;
+			}
+		}
+	}
+	else
+	{
+		cout << "No se encontro un archivo con el nombre dado.\n";
+		return false;
+	}
+}
+
+bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir)
+{
+	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
+	if (fl != NULL)
+	{
+		if (strcmp(fl->archi->nombreArchivo, nombreArchivo) == 0)
+		{
+			// Es el primero de la lista.
+			if (fl->archi->atr == Lectura_Escritura)
+			{
+				/*MANEJAR EL TAMAÑO DEL TEXTO*/
+				Cadena txtArchivo = fl->archi->texto;
+				strcat(txtArchivo, texto);
+				fl->archi->texto = txtArchivo;
+				return true;
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura.\n";
+				return false;
+			}
+		}
+		else
+		{
+			// NO es el primero de la lista.
+			if (fl->sig->archi->atr == Lectura_Escritura)
+			{
+				/*MANEJAR EL TAMAÑO DEL TEXTO*/
+				Cadena txtArchivo = fl->archi->texto;
+				strcat(txtArchivo, texto);
+				fl->sig->archi->texto = txtArchivo;
 				return true;
 			}
 			else
