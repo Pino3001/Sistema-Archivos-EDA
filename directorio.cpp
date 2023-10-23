@@ -140,36 +140,38 @@ bool existe_directorio(Cadena nombre, directorio dir)
 }
 
 // Comprueba la existencia del archivo pasado.// BORRAR
-file existe_archivo(Cadena nombreArchivo, directorio dir)
+file existe_archivo(Cadena nombre, Cadena ext, directorio dir)
 {
 	// Devuelve el archivo en caso de encontrarlo, NULL en caso contrario.
 	lista_file fl = dir->archivos;
+	Cadena aux = new char[4];
 	if (fl == NULL)
 	{
+		delete[] aux;
+		return NULL;
+	}
+	else if (ext == NULL)
+	{
+		strcpy(aux, "txt");
+	}
+	else
+	{
+		strcpy(aux, ext);
+	}
+	// Separo la extencion y el nombre del paramentro.
+	while (fl != NULL && (strcmp(fl->archi->nombreArchivo, nombre) != 0 || strcmp(fl->archi->extencion, aux) != 0))
+	{
+		fl = fl->sig;
+	}
+	if (fl == NULL)
+	{
+		delete[] aux;
 		return NULL;
 	}
 	else
-	{ // Separo la extencion y el nombre del paramentro.
-		Cadena nombre = strtok(nombreArchivo, ".");
-		Cadena ext = strtok(NULL, ".");
-		if (nombre == NULL || ext == NULL)
-		{
-			cout << "No se ingreso una extencion. \n";
-			return NULL;
-		}
-		while (fl != NULL && (strcmp(fl->archi->nombreArchivo, nombre) != 0 || strcmp(fl->archi->extencion, ext) != 0))
-		{
-			fl = fl->sig;
-		}
-		if (fl == NULL)
-		{
-			cout << "No existe el archivo dentro del directorio.";
-			return NULL;
-		}
-		else
-		{
-			return fl->archi;
-		}
+	{
+		delete[] aux;
+		return fl->archi;
 	}
 }
 
@@ -256,6 +258,7 @@ lista_dir buscar_directorio_lista(Cadena nombre, lista_dir ld)
 		else
 		{
 			// dAux == ld en caso de ser el primero, dAux->sig = ld en cualquier otro caso.
+			cout << "el nombre es " << dAux->dir->nombrecarpeta << "  \n";
 			return dAux;
 		}
 	}
@@ -271,7 +274,7 @@ lista_file buscar_archivo_en_lista(Cadena nombreArchivo, lista_file fl)
 	// Pfl puede ser NULL.
 	if (fl != NULL)
 	{
-		Cadena nombre = strtok(nombre, ".");
+		Cadena nombre = strtok(nombreArchivo, ".");
 		Cadena ext = strtok(NULL, ".");
 		if (nombre == NULL || ext == NULL)
 		{
@@ -325,7 +328,8 @@ bool mover_elemento(Cadena nombre, Cadena nomDestino, directorio dirActual, dire
 			// Encontre un subdirectorio con el nombre dado.
 			// Procedo a buscar en el directorio destino que no exista uno con el mismo nombre.
 			lista_dir dirD = buscar_directorio_lista(nombre, dDestino->subdirectorios);
-			if (pertenece_al_path(nomDestino, dirActual, dirD->dir))
+			/*COMPROBAR QUE NOMDESTINO TENGA ALGO ANTES*/
+			if (dirD != NULL && pertenece_al_path(nomDestino, dirActual, dirD->dir))
 			{
 				return false;
 			}
@@ -361,6 +365,7 @@ bool mover_elemento(Cadena nombre, Cadena nomDestino, directorio dirActual, dire
 		{
 			// No encontre directorios con el nombre dado. Busco archivos.
 			lista_file fl = dirActual->archivos;
+			cout << "Entro a buscar el archivo " << nombre << " que esta en la lista donde el primero es " << fl->archi->nombreArchivo << "\n";
 			lista_file fAux = buscar_archivo_en_lista(nombre, fl);
 			if (fAux != NULL)
 			{
@@ -409,7 +414,6 @@ directorio mover_puntero_a_destino(Cadena dirDestino, directorio dirRaiz)
 	directorio dirFinal = dirRaiz;
 	Cadena head = strtok(dirDestino, "/");
 	Cadena tail = strtok(NULL, "/");
-	Cadena destino = dirDestino;
 	if (strcmp(head, "RAIZ") != 0)
 	{
 		return NULL;
@@ -445,28 +449,33 @@ directorio ir_directorio(directorio dir, Cadena nombreDir)
 	return ld->dir;
 }
 
+//Busca si el directorio aBorrar pertenece al path del padre.
 bool pertenece_al_path(Cadena pathDestino, directorio dir, directorio aBorrar)
 {
-	Cadena pathActual = new char[100];
-	pathActual = obtener_path(pathActual, dir);
+	//Obtengo la cadena del path actual para compararla con la del path aBorrar. 
+	Cadena pathActual = obtener_path(pathActual, dir);
 	strcat(pathActual, "/");
 	strcat(pathActual, aBorrar->nombrecarpeta);
 	unsigned int lenActual = strlen(pathActual);
 	unsigned int lenDestino = strlen(pathDestino);
 
+	//Si el pathActual es mayor al pathDestino, pathDestino no es subdirectorio del actual.
 	if (pathActual > pathDestino)
 	{
 		return false;
 	}
 	else if (strncmp(pathActual, pathDestino, lenDestino) == 0)
-	{
+	{	
+		//Si son iguales pathDestino es subdirectorio del actual.
 		return true;
 	}
 	else
 	{
+		//No comparten path.
 		return false;
 	}
 }
+
 // Destruye el archivo dado, sin importar el Atributo.
 bool remover_archivo(Cadena nombre, lista_file lf, directorio dir)
 {
@@ -507,25 +516,27 @@ bool remover_archivo(Cadena nombre, lista_file lf, directorio dir)
 	}
 }
 
+//Obtiene una cadena con los directorios separados por /.
 Cadena obtener_path(Cadena nombre, directorio dir)
 {
-	if (dir == NULL)
-	{
-		return nombre;
-	}
 	if (dir->padre == NULL)
 	{
 		strcat(nombre, dir->nombrecarpeta);
 		return nombre;
 	}
-	imprimir_path(dir->padre);
-	strcat(nombre, "/");
-	strcat(nombre, dir->nombrecarpeta);
+	if (dir != NULL)
+	{
+		obtener_path(nombre, dir->padre);
+		strcat(nombre, "/");
+		strcat(nombre, dir->nombrecarpeta);
+	}
+	return nombre;
 }
+
 // Destruye el archivo dado.
 bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir)
 {
-
+	//Busca y destruye el archivo dado, si este existe.
 	lista_file lf = dir->archivos;
 	lista_file aux;
 	while ((lf != NULL) && ((strcmp(lf->archi->nombreArchivo, nombre) != 0) || (strcmp(lf->archi->extencion, ext) != 0)))
@@ -643,20 +654,19 @@ void imprimir_directorio_v2(directorio dir)
 // Crea un archivo vacio nuevo. Precondicion: nombre y ext no nulos.
 void crear_archivo(Cadena nombre, Cadena ext, directorio dir)
 {
-
-	Cadena str = strtok(nombre, ".");
 	file f = new (nodo_file);
 	f->nombreArchivo = new char(MAX_NOM_ARCH);
 	strcpy(f->nombreArchivo, nombre);
+	f->atr = Lectura_Escritura;
 	f->extencion = new char(MAX_EXT_ARCH);
-	if(ext == NULL){
-		strcpy(f->extencion, ".txt");
+	if (ext == NULL)
+	{
+		strcpy(f->extencion, "txt");
 	}
-	else{
+	else
+	{
 		strcpy(f->extencion, ext);
 	}
-	strcpy(f->extencion, ext);
-	f->atr = Lectura_Escritura;
 	f->texto = NULL;
 	// Engancho el nuevo archivo en la lista de archivos del directorio.
 	lista_file ld = new (nodo_lista_file);
@@ -687,9 +697,10 @@ bool cambiar_atributo(Cadena nombre, Cadena ext, Atributo atr, directorio dir)
 	}
 }
 
-bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
+//Inserta un texto al inicio de archi->texto.
+bool insertar_texto_inicio(Cadena nombreArchivo, Cadena texto, directorio dir)
 {
-
+	//Busca el archivo dado.
 	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
 	if (fl != NULL)
 	{
@@ -698,10 +709,26 @@ bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
 			// Es el primero de la lista.
 			if (fl->archi->atr == Lectura_Escritura)
 			{
-				Cadena txt = new char[MAX_COMANDO];
-				strcpy(texto, txt);
-				fl->archi->texto = txt;
-				return true;
+				if (fl->archi->texto == NULL)
+				{
+					// Primera inserccion de texto en el archivo.
+					Cadena txt = new char[MAX_COMANDO];
+					strcpy(txt, texto);
+					Cadena temp = fl->archi->texto;
+					fl->archi->texto = txt;
+					delete[] temp;
+					return true;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					int cantHay = strlen(texto);
+					int cantPuedo = MAX_COMANDO - cantHay;
+					strncat(texto, " ", cantPuedo);
+					strcat(texto, fl->archi->texto);
+					strncpy(fl->archi->texto, texto, MAX_COMANDO);
+					return true;
+				}
 			}
 			else
 			{
@@ -714,10 +741,26 @@ bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
 			// NO es el primero de la lista.
 			if (fl->sig->archi->atr == Lectura_Escritura)
 			{
-				Cadena txt = new char[MAX_COMANDO];
-				strcpy(texto, txt);
-				fl->sig->archi->texto = txt;
-				return true;
+				if (fl->archi->texto == NULL)
+				{
+					// Primera inserccion de texto en el archivo.
+					Cadena txt = new char[MAX_COMANDO];
+					strcpy(texto, txt);
+					Cadena temp = fl->archi->texto;
+					fl->sig->archi->texto = txt;
+					delete[] temp;
+					return true;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					int cantHay = strlen(texto);
+					int cantPuedo = MAX_COMANDO - cantHay;
+					strncat(fl->sig->archi->texto, " ", cantPuedo);
+					strcat(fl->sig->archi->texto, texto);
+					strncpy(fl->sig->archi->texto, texto, MAX_COMANDO);
+					return true;
+				}
 			}
 			else
 			{
@@ -733,8 +776,10 @@ bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir)
 	}
 }
 
+//Inserta un texto al final de archi->texto.
 bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir)
 {
+	//Busca el archivo dado.
 	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
 	if (fl != NULL)
 	{
@@ -743,11 +788,25 @@ bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir)
 			// Es el primero de la lista.
 			if (fl->archi->atr == Lectura_Escritura)
 			{
-				/*MANEJAR EL TAMAÑO DEL TEXTO*/
-				Cadena txtArchivo = fl->archi->texto;
-				strcat(txtArchivo, texto);
-				fl->archi->texto = txtArchivo;
-				return true;
+				if (fl->archi->texto == NULL)
+				{
+					// Primera inserccion de texto en el archivo.
+					Cadena txt = new char[MAX_COMANDO];
+					strcpy(txt, texto);
+					Cadena temp = fl->archi->texto;
+					fl->archi->texto = txt;
+					delete[] temp;
+					return true;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					int cantHay = strlen(fl->archi->texto);
+					int cantPuedo = MAX_COMANDO - cantHay;
+					strncat(fl->archi->texto, " ", cantPuedo);
+					strncat(fl->archi->texto, texto, cantPuedo - 1);
+					return true;
+				}
 			}
 			else
 			{
@@ -760,11 +819,25 @@ bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir)
 			// NO es el primero de la lista.
 			if (fl->sig->archi->atr == Lectura_Escritura)
 			{
-				/*MANEJAR EL TAMAÑO DEL TEXTO*/
-				Cadena txtArchivo = fl->archi->texto;
-				strcat(txtArchivo, texto);
-				fl->sig->archi->texto = txtArchivo;
-				return true;
+				if (fl->archi->texto == NULL)
+				{
+					// Primera inserccion de texto en el archivo.
+					Cadena txt = new char[MAX_COMANDO];
+					strcpy(texto, txt);
+					Cadena temp = fl->archi->texto;
+					fl->sig->archi->texto = txt;
+					delete[] temp;
+					return true;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					int cantHay = strlen(fl->sig->archi->texto);
+					int cantPuedo = MAX_COMANDO - cantHay;
+					strncat(fl->sig->archi->texto, " ", cantPuedo);
+					strncat(fl->sig->archi->texto, texto, cantPuedo - 1);
+					return true;
+				}
 			}
 			else
 			{
@@ -779,3 +852,377 @@ bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir)
 		return false;
 	}
 }
+
+//Eliminar del inicio del texto una cantidad dada de caracteres. 
+bool eliminar_K_elementos_iniciales(directorio dir, Cadena nombreArchivo, int K)
+{
+	//Busca el archivo dado en la lista de directorios.
+	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
+	if (fl != NULL)
+	{
+		if (strcmp(fl->archi->nombreArchivo, nombreArchivo) == 0)
+		{
+			// Es el primero de la lista.
+			if (fl->archi->atr == Lectura_Escritura)
+			{
+				if (fl->archi->texto == NULL)
+				{
+					cout << "El archivo esta vacio! ";
+					return false;
+				}
+				Cadena textElim = new char[MAX_COMANDO];
+				int tam = strlen(fl->archi->texto);
+				if (K > tam)
+				{
+					//Tengo que eliminar todo el texto.
+					textElim = NULL;
+					Cadena temp = fl->archi->texto;
+					fl->archi->texto = textElim;
+					delete[] temp;
+				}
+				else
+				{
+					//Va a quedar texto en la cadane.
+					for (int i = K; i < tam; i++)
+					{
+						textElim[i - K] = fl->archi->texto[i];
+					}
+					//Luego de quitar la cantidad dada inserto al final un \0 para que me quede la cadena completa.
+					textElim[tam - K] = '\0';
+					strncpy(fl->archi->texto, textElim, MAX_COMANDO);
+					delete[] textElim;
+					return true;
+				}
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura. \n";
+				return false;
+			}
+		}
+		else
+		{
+			//No es el primero de la lista.
+			if (fl->archi->atr == Lectura_Escritura)
+			{
+				if (fl->archi->texto == NULL)
+				{
+					cout << "El archivo esta vacio! ";
+					return false;
+				}
+				Cadena textElim = new char[MAX_COMANDO];
+				int tam = strlen(fl->sig->archi->texto);
+				if (K > tam)
+				{
+					//Tengo que eliminar todo el texto.
+					textElim = NULL;
+					Cadena temp = fl->sig->archi->texto;
+					fl->sig->archi->texto = textElim;
+					delete[] temp;
+				}
+				else
+				{
+					for (int i = K; i < tam; i++)
+					{
+						textElim[i - K] = fl->sig->archi->texto[i];
+					}
+					//Luego de quitar la cantidad dada inserto al final un \0 para que me quede la cadena completa.
+					textElim[tam - K] = '\0';
+					strncpy(fl->sig->archi->texto, textElim, MAX_COMANDO);
+					delete[] textElim;
+					return true;
+				}
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura. \n";
+				return false;
+			}
+		}
+	}
+	else
+	{
+		cout << "No se encontro un archivo con el nombre dado.\n";
+		return false;
+	}
+	return false;
+}
+
+//Eliminar del final del texto una cantidad dada de caracteres. 
+bool eliminar_K_elementos_finales(directorio dir, Cadena nombreArchivo, int K)
+{
+	//Busca el archivo dado.
+	lista_file fl = buscar_archivo_en_lista(nombreArchivo, dir->archivos);
+	if (fl != NULL)
+	{
+		if (strcmp(fl->archi->nombreArchivo, nombreArchivo) == 0)
+		{
+			// Es el primero // Primera inserccion de texto en el archivo.de la lista.
+			if (fl->archi->atr == Lectura_Escritura)
+			{
+				// Es el primero de la lista.
+				if (fl->archi->texto == NULL)
+				{
+					cout << "El archivo esta vacio! ";
+					return false;
+				}
+				Cadena textElim = new char[MAX_COMANDO];
+				int tam = strlen(fl->archi->texto);
+				if (K > tam)
+				{
+					// Primera inserccion de texto en el archivo.
+					textElim = NULL;
+					Cadena temp = fl->archi->texto;
+					fl->archi->texto = textElim;
+					delete[] temp;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					for (int i = 0; i < tam - K; i++)
+					{
+						textElim[i] = fl->archi->texto[i];
+					}
+					textElim[tam - K] = '\0';
+					strncpy(fl->archi->texto, textElim, MAX_COMANDO);
+					delete[] textElim;
+					return true;
+				}
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura. \n";
+				return false;
+			}
+		}
+		else
+		{
+			// NO es el primero de la lista.
+			if (fl->archi->atr == Lectura_Escritura)
+			{
+				if (fl->archi->texto == NULL)
+				{
+					cout << "El archivo esta vacio! ";
+					return false;
+				}
+				Cadena textElim = new char[MAX_COMANDO];
+				int tam = strlen(fl->sig->archi->texto);
+				if (K > tam)
+				{
+					// Primera inserccion de texto en el archivo.
+					textElim = NULL;
+					Cadena temp = fl->sig->archi->texto;
+					fl->sig->archi->texto = textElim;
+					delete[] temp;
+				}
+				else
+				{
+					//No es la primera inserccion de texto en el archivo.
+					for (int i = 0; i < tam - K; i++)
+					{
+						textElim[i] = fl->sig->archi->texto[i];
+					}
+					textElim[tam - K] = '\0';
+					strncpy(fl->sig->archi->texto, textElim, MAX_COMANDO);
+					delete[] textElim;
+					return true;
+				}
+			}
+			else
+			{
+				cout << "El archivo es de solo lectura. \n";
+				return false;
+			}
+		}
+	}
+	else
+	{
+		cout << "No se encontro un archivo con el nombre dado.\n";
+		return false;
+	}
+	return false;
+}
+
+//Imprime el contenido del archivo dado.
+bool imprimir_texto(Cadena nombreArchivo, directorio dir)
+{
+
+	lista_file lf = dir->archivos;
+	while (lf != NULL && strcmp(lf->archi->nombreArchivo, nombreArchivo) == 0)
+	{
+		lf = lf->sig;
+	}
+	if (lf == NULL)
+	{
+		cout << "No se encontro el archivo! ";
+		return false;
+	}
+	else if (lf->archi->texto == NULL)
+	{
+		cout << "El archivo esta vacio! ";
+		return false;
+	}
+	else
+	{
+		int cont = 0;
+		for (int i = 0; lf->archi->texto[i] != '\0'; i++)
+		{
+			cont++;
+		}
+		for (int i = 0; i <= cont + 4; i++)
+		{
+			cout << "_";
+		}
+		cout << "\n"
+			 << "\n";
+		cout << ">> "
+			 << "\"" << lf->archi->texto
+			 << "\"";
+		cout << "\n";
+		for (int i = 0; i <= cont + 4; i++)
+		{
+			cout << "_";
+		}
+		cout << "|";
+		return true;
+	}
+}
+
+//Busca el archivo dado.
+bool search_texto(Cadena nombreArchivo, directorio dir, Cadena texto)
+{
+	//Busca el archivo en la lista.
+	lista_file lf = dir->archivos;
+	while (lf != NULL && strcmp(lf->archi->nombreArchivo, nombreArchivo) == 0)
+	{
+		lf = lf->sig;
+	}
+	if (lf == NULL)
+	{
+		cout << "No se encontro el archivo!";
+		return false;
+	}
+	else
+	{
+		//Funcion que busca la primera aparicion del texto en la cadena dada, devuelve un puntero al primer caracter.
+		Cadena resultado = strstr(lf->archi->texto, texto);
+		if (resultado != NULL)
+		{
+			cout << "El texto buscado forma parte del archivo.";
+			return true;
+		}
+		else
+		{
+			cout << "No existe el texto buscado en el archivo! \n";
+			return false;
+		}
+	}
+}
+
+//Busca el archivo dado y remplaza el texto (si es que existe) por el texto 2.
+bool remplazar_texto(Cadena nombreArchivo, directorio dir, Cadena texto, Cadena texto2)
+{
+	//Busca el archivo en la lista de directorios.
+	lista_file lf = dir->archivos;
+	while (lf != NULL && strcmp(lf->archi->nombreArchivo, nombreArchivo) == 0)
+	{
+		lf = lf->sig;
+	}
+	if (lf == NULL)
+	{
+		cout << "No se encontro el archivo!";
+		return false;
+	}
+	else
+	{
+		Cadena resultado = strstr(lf->archi->texto, texto);
+		if (resultado != NULL)
+		{
+			//Se encontro el texto en lf->archi->texto.
+			while (resultado != NULL)
+			{
+				//Itero mientras se siga dando la ocurrencia en el texto.
+				Cadena txtTemp = new char[MAX_COMANDO];
+				int tamBuscado = strlen(texto);
+				int tamRemplazo = strlen(texto2);
+				int tamResul = strlen(resultado);
+				int tamDiff = tamRemplazo - tamBuscado;
+				int tamDiff2 = tamBuscado - tamRemplazo;
+
+				for (int i = 0; i < tamResul + tamDiff; i++)
+				{
+					//Recorro el texto desde el puntero resultado agregandole o restando (dependiendo del caso) la diferencia de tamaño de los dos textos.
+					if (i <= tamRemplazo && texto2[i] != '\0')
+					{
+						//Agrego en los primeros lugares el contenido de texto2.
+						txtTemp[i] = texto2[i];
+					}
+					else
+					{
+						//Luego de agregado texto2, inserto el resto del puntero resultado, omitiendo el resto de texto o haciendo mas lugar para texto2.
+						txtTemp[i] = resultado[i + tamDiff2];
+					}
+				}
+				for (int i = 0; i < tamResul + tamDiff; i++)
+				{
+					//Copio en resultado txtTemp con el texto ya remplasado.
+					resultado[i] = txtTemp[i];
+				}
+				//Inserto el valor nulo para dejar la cadena corectamente.
+				resultado[tamResul + tamDiff] = '\0';
+				//Vuelvo a comprobar que no existan mas ocurrencias en lo que queda de texto.
+				resultado = strstr(lf->archi->texto, texto);
+				delete[] txtTemp;
+			}
+			return true;
+		}
+		else
+		{
+			cout << "No existe el texto buscado en el archivo! \n";
+			return false;
+		}
+	}
+}
+
+/*void imprimir_archivos_ordenados()
+{
+
+	lista_file aux = new char[MAX_NOM_ARCH];
+	imprimir_path(dir);
+	cout << "\n";
+	lista_file lf = dir->archivos;
+	int tam = strlen() while (lf != NULL)
+	{
+		// Imprimo el camino del directorio y al final agreaga el archivo en caso de que exista.
+		imprimir_path(dir);
+		cout << "/";
+		imprimir_nombre_archivo(lf->archi);
+		cout << "\n";
+		lf = lf->sig;
+	}
+	lista_file NuevoPrim == NULL;
+	lista_file aux;
+	lista_file temp;
+	lista_file iter;
+	if (lf != NULL)
+	{
+		while (lf != NULL)
+		{
+			iter = lf->sig;
+			while (iter != NULL)
+			{
+				aux = lf;
+				if (strcmp(aux->archi->nombreArchivo, iter->archi->nombreArchivo) < 0)
+				{
+					temp->archi = aux->archi;
+					aux->archi = iter->archi;
+					iter->archi = temp->archi;
+					iter->sig = temp;
+
+				}
+				temp = temp->sig;
+			}
+			lf = lf->sig;
+		}
+	}
+*/

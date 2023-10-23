@@ -33,7 +33,7 @@ directorio ir_al_padre(directorio dir);
 bool existe_directorio(Cadena nombre, directorio dir);
 
 // Comprueba la existencia del archivo pasado.
-file existe_archivo(Cadena nombreArchivo, directorio dir);
+file existe_archivo(Cadena nombre, Cadena ext, directorio dir);
 
 // Obtengo el directorio solicitado.
 directorio obtener_subdirectorio(Cadena nombre, directorio dir);
@@ -58,6 +58,8 @@ bool pertenece_al_path(Cadena pathDestino, directorio dir, directorio aBorrar);
 // Destruye el archivo dado.
 bool remover_archivo(Cadena nombre, lista_file lf, directorio dir);
 
+Cadena obtener_path(Cadena nombre, directorio dir);
+
 bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir);
 
 // Imprime todos los subdirectorios de dir en forma ordenada y recursivamente.
@@ -78,7 +80,18 @@ void crear_archivo(Cadena nombre, Cadena ext, directorio dir);
 // Coloca en el archivo el nuevo Atributo.
 bool cambiar_atributo(Cadena nombre, Cadena ext, Atributo atr, directorio dir);
 
-bool insertar_texto_archivo(Cadena nombreArchivo, Cadena texto, directorio dir);
+bool insertar_texto_inicio(Cadena nombreArchivo, Cadena texto, directorio dir);
 
 bool insertar_texto_final(Cadena nombreArchivo, Cadena texto, directorio dir);
+
+bool eliminar_K_elementos_iniciales(directorio dir, Cadena nombreArchivo, int K);
+
+bool eliminar_K_elementos_finales(directorio dir, Cadena nombreArchivo, int K);
+
+bool imprimir_texto(Cadena nombreArchivo, directorio dir);
+
+bool search_texto(Cadena nombreArchivo, directorio dir, Cadena texto);
+
+bool remplazar_texto(Cadena nombreArchivo, directorio dir, Cadena texto, Cadena texto2);
+
 #endif

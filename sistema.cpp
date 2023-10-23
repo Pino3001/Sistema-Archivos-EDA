@@ -149,20 +149,29 @@ TipoRet CREATEFILE(Sistema &s, Cadena nombreArchivo)
 	// Crea un nuevo archivo en el directorio actual.
 	// Para mas detalles ver letra.
 
-	if (existe_archivo(nombreArchivo, s->actual) != NULL)
+	if (strncmp(nombreArchivo, ".", 1) == 0)
+	{
+		cout << "El nombre del archivo no ha sido ingresado!\n";
+		return ERROR;
+	}
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (ext != NULL)
+	{
+		if (strlen(ext) > MAX_EXT_ARCH)
+		{
+			cout << "La extencion dada no es correcta, deben ser maximo: " << MAX_EXT_ARCH << " carecteres.\n";
+			return ERROR;
+		}
+	}
+	if (existe_archivo(nombre, ext, s->actual) != NULL)
 	{ // Compruebo que no exista el nombre de archivo.
-		cout << "Ese nombre de directorio esta usado";
+		cout << "Ya existe un archivo con ese nombre dentro del directorio actual\n";
 		return ERROR;
 	}
 	else
 	{ // Separo la extencion y nombre del parametro.
-		Cadena nombre = strtok(nombreArchivo, ".");
-		Cadena ext = strtok(NULL, ".");
-		if (nombre == NULL)
-		{
-			cout << "El nombre del archivo no a sigo ingresado! \n";
-			return ERROR;
-		}	
+
 		crear_archivo(nombre, ext, s->actual);
 		return OK;
 	}
@@ -177,10 +186,10 @@ TipoRet DELETE(Sistema &s, Cadena nombreArchivo)
 	Cadena ext = strtok(NULL, ".");
 	if (nombre == NULL || ext == NULL)
 	{
-		cout << "No se ingreso una extencion. \n";
+		cout << "No se ingreso el nombre o extencion correctamente. \n";
 		return ERROR;
 	}
-	if (!buscar_destruir_archivo_(nombre, ext, s->actual))
+	else if (!buscar_destruir_archivo_(nombre, ext, s->actual))
 	{
 		return ERROR;
 	}
@@ -204,7 +213,7 @@ TipoRet ATTRIB(Sistema &s, Cadena nombreArchivo, Cadena parametro)
 	}
 	else
 	{
-		cout << "Parametro incorrecto. \n";
+		cout << "No se ingreso un atributo de archivo correcto. \n";
 		return ERROR;
 	}
 	// Separo la extencion y el nombre del paramentro.
@@ -212,16 +221,16 @@ TipoRet ATTRIB(Sistema &s, Cadena nombreArchivo, Cadena parametro)
 	Cadena ext = strtok(NULL, ".");
 	if (nombre == NULL || ext == NULL)
 	{
-		cout << "No se ingreso una extencion. \n";
+		cout << "No se ingreso el nombre o extencion correctamente. \n";
 		return ERROR;
 	}
-	else if (cambiar_atributo(nombre, ext, atr, s->actual))
+	if (cambiar_atributo(nombre, ext, atr, s->actual))
 	{
 		return OK;
 	}
 	else
 	{
-		return OK;
+		return ERROR;
 	}
 }
 
@@ -229,7 +238,15 @@ TipoRet IC(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Agrega un texto al final del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-	if (insertar_texto_archivo(nombreArchivo, texto, s->actual))
+	Cadena txtSin = strtok(texto, "\"");
+	cout << "se incerto : " << texto << " \n";
+	cout << "en txtSin hay: " << txtSin << " \n";
+	if (txtSin == NULL)
+	{
+		cout << "No se ingreso un texto luego de las comillas.";
+		return ERROR;
+	}
+	else if (insertar_texto_inicio(nombreArchivo, txtSin, s->actual))
 	{
 		return OK;
 	}
@@ -243,7 +260,15 @@ TipoRet IF(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Agrega un texto al final del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-	if (insertar_texto_final(nombreArchivo, texto, s->actual))
+	Cadena txtSin = strtok(texto, "\"");
+	cout << "se incerto : " << texto << " \n";
+	cout << "en txtSin hay: " << txtSin << " \n";
+	if (txtSin == NULL)
+	{
+		cout << "No se ingreso un texto luego de las comillas.";
+		return ERROR;
+	}
+	if (insertar_texto_final(nombreArchivo, txtSin, s->actual))
 	{
 		return OK;
 	}
@@ -257,35 +282,51 @@ TipoRet DC(Sistema &s, Cadena nombreArchivo, int k)
 {
 	// Elimina los a lo sumo K primeros caracteres del archivo parámetro.
 	// Para mas detalles ver letra.
-
-	
-	return NO_IMPLEMENTADA;
+	if (eliminar_K_elementos_iniciales(s->actual, nombreArchivo, k))
+	{
+		return OK;
+	}
+	return ERROR;
 }
 
 TipoRet DF(Sistema &s, Cadena nombreArchivo, int k)
 {
 	// Elimina los a lo sumo K últimos caracteres del archivo parámetro.
 	// Para mas detalles ver letra.
-	return NO_IMPLEMENTADA;
+	if (eliminar_K_elementos_finales(s->actual, nombreArchivo, k))
+	{
+		return OK;
+	}
+	return ERROR;
 }
 
 TipoRet TYPE(Sistema &s, Cadena nombreArchivo)
 {
 	// Imprime el contenido del archivo parámetro.
 	// Para mas detalles ver letra.
-	return NO_IMPLEMENTADA;
+	if (imprimir_texto(nombreArchivo, s->actual))
+	{
+		return OK;
+	}
+	return ERROR;
 }
 
 TipoRet SEARCH(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Busca dentro del archivo la existencia del texto.
 	// Para mas detalles ver letra.
-	return NO_IMPLEMENTADA;
+	if(search_texto(nombreArchivo, s->actual, texto)){
+		return OK;
+	}
+	return ERROR;
 }
 
 TipoRet REPLACE(Sistema &s, Cadena nombreArchivo, Cadena texto1, Cadena texto2)
 {
 	// Busca y reemplaza dentro del archivo la existencia del texto1 por el texto2.
 	// Para mas detalles ver letra.
-	return NO_IMPLEMENTADA;
+	if(remplazar_texto(nombreArchivo, s->actual, texto1, texto2)){
+		return OK;
+	}
+	return ERROR;
 }

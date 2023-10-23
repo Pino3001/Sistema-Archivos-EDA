@@ -153,7 +153,7 @@ int main()
 			pch = strtok(NULL, "( ,)\n");
 			if (pch != NULL)
 			{
-				pch1 = strtok(NULL, "( ,)\n");
+				pch1 = strtok(NULL, "\n");
 				if (pch1 != NULL)
 				{
 					ret = IC(s, pch, pch1);
@@ -170,7 +170,7 @@ int main()
 			pch = strtok(NULL, "( ,)\n");
 			if (pch != NULL)
 			{
-				pch1 = strtok(NULL, "( ,)\n");
+				pch1 = strtok(NULL, "\n");
 				if (pch1 != NULL)
 				{
 					ret = IF(s, pch, pch1);
