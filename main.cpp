@@ -14,8 +14,24 @@ using namespace std;
 
 int main()
 {
+	cout<< strcmp("b", "aa") << "\n";
+	cout<< strcmp("b", "a") << "\n";
 	Sistema s;
 	CREARSISTEMA(s);
+	for (int i = 0; i < 3000; i++)
+	{
+		cout << "i "<< i << "\n";
+		Cadena cadena = new char[MAX_NOM_ARCH];
+		strcpy(cadena,"a.txt");
+		TipoRet ret = CREATEFILE(s, cadena);
+		if(ret != OK)
+			return ret;
+		ret = DELETE(s, cadena);
+		if(ret != OK)
+			return ret;
+
+	}
+	
 	char *comando = new (char[MAX_COMANDO]);
 	char *pch, *pch1, *pch2, *pch3;
 	TipoRet ret;
