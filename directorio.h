@@ -20,7 +20,7 @@ void enganchar_lista_ordenada(directorio dir, Cadena nombre, lista_dir ld);
 directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool sobreescribir);
 
 // Quita el archivo de nombre dado, de la lista de archivos del padre. Devuelve el archivo que ha sido desenganchado.
-file quitar_archivo(Cadena nombreArchivo, directorio padre);
+file quitar_archivo(Cadena nombre, Cadena ext, directorio padre);
 
 file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir);
 
@@ -28,7 +28,7 @@ file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir);
 directorio destruir_directorio(directorio dir);
 
 // Crea un archivo vacio nuevo. Precondicion: nombre y ext no nulos.
-void crear_archivo(Cadena nombreArchivo, directorio dirActual);
+void crear_archivo(Cadena nombre, Cadena ext, directorio dirActual);
 
 // Busca si el directorio aBorrar pertenece al path del padre.
 bool pertenece_al_path(Cadena pathDestino, directorio dir, Cadena nombreCarpeta);
@@ -50,7 +50,7 @@ directorio ir_al_padre(directorio dir);
 // Compruebo la existencia del directorio pasado.
 directorio existe_directorio(Cadena nombre, directorio dir);
 
-file existe_archivo(Cadena nombreArchivo,  directorio dir);
+file existe_archivo(Cadena nombre, Cadena ext, directorio dir);
 
 /* // Comprueba la existencia del archivo pasado.
 file existe_archivo(Cadena nombre, Cadena ext, directorio dir); */
@@ -82,7 +82,7 @@ bool remover_archivo(Cadena nombre, lista_file lf, directorio dir);
 
 Cadena obtener_path(Cadena nombre, directorio dir);
 
-bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir);
+/* bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir); */
 
 // Imprime todos los subdirectorios de dir en forma ordenada y recursivamente.
 void imprimir_directorio(directorio dir);
@@ -113,4 +113,5 @@ bool search_texto(file archivo, Cadena texto);
 
 bool remplazar_texto(file archivo, Cadena texto, Cadena texto2);
 
+Cadena nombre_actual(directorio dirActual);
 #endif

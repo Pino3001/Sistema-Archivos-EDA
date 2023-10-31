@@ -82,4 +82,5 @@ TipoRet REPLACE(Sistema &s, Cadena nombreArchivo, Cadena texto1, Cadena texto2);
 // Busca y reemplaza dentro del archivo la existencia del texto1 por el texto2.
 // Para mas detalles ver letra.
 
+void propmt(Sistema &s);
 #endif

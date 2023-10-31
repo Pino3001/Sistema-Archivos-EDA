@@ -71,7 +71,6 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 	lista_dir ld = dDestino->subdirectorios;
 	if (strcmp(subDir->nombrecarpeta, ld->dir->nombrecarpeta) < 0)
 	{
-		cout << "marca 1\n";
 		lista_dir nLd = new (nodo_lista_dir);
 		nLd->dir = subDir;
 		nLd->sig = dDestino->subdirectorios;
@@ -81,7 +80,6 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 	}
 	if (strcmp(subDir->nombrecarpeta, ld->dir->nombrecarpeta) == 0)
 	{
-		cout << "marca 2\n";
 		if (sobreescribir)
 		{
 			directorio tem = destruir_directorio(ld->dir);
@@ -93,8 +91,6 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 		}
 		else
 		{
-			cout << "subDir->nombrecarpeta " << subDir->nombrecarpeta << "\n";
-			cout << "ld->dir->nombrecarpeta " << ld->dir->nombrecarpeta << "\n";
 			return NULL;
 		}
 	}
@@ -105,12 +101,6 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 
 	if (ld->sig == NULL)
 	{
-		cout << "marca 3\n";
-		if (dDestino->subdirectorios != NULL)
-		{
-			cout << dDestino->subdirectorios->dir->nombrecarpeta << "\n";
-		}
-
 		lista_dir nLd = new (nodo_lista_dir);
 		nLd->dir = subDir;
 		nLd->sig = NULL;
@@ -120,7 +110,6 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 	}
 	if (strcmp(subDir->nombrecarpeta, ld->sig->dir->nombrecarpeta) == 0)
 	{
-		cout << "marca 4\n";
 		if (sobreescribir)
 		{
 			lista_dir lAux = ld->sig;
@@ -134,17 +123,11 @@ directorio agregar_subdirectorio(directorio dDestino, directorio subDir, bool so
 
 		else
 		{
-			cout << "subDir->nombrecarpeta " << subDir->nombrecarpeta << "\n";
-			cout << "ld->sig->dir->nombrecarpeta " << ld->sig->dir->nombrecarpeta << "\n";
 			return NULL;
 		}
 	}
 	else
 	{
-		cout << "marca 5 \n";
-		cout << "subDir->nombrecarpeta " << subDir->nombrecarpeta << "\n";
-		cout << "ld->sig->dir->nombrecarpeta " << ld->sig->dir->nombrecarpeta << "\n";
-		cout << "strcmp(subDir->nombrecarpeta, ld->sig->dir->nombrecarpeta) " << strcmp(subDir->nombrecarpeta, ld->sig->dir->nombrecarpeta) << "\n";
 		lista_dir nLd = new (nodo_lista_dir);
 		nLd->dir = subDir;
 		nLd->sig = ld->sig;
@@ -187,11 +170,8 @@ lista_dir destruir_lista_directorio(lista_dir d)
 /* -- CREAR NUEVOS ARCHIVOS Y QUITARLOS -- */
 
 // Crea un archivo vacio nuevo. Precondicion: nombre y ext no nulos.
-void crear_archivo(Cadena nombreArchivo, directorio dirActual)
+void crear_archivo(Cadena nombre, Cadena ext, directorio dirActual)
 {
-
-	Cadena nombre = strtok(nombreArchivo, ".");
-	Cadena ext = strtok(NULL, ".");
 	file f = new (nodo_file);
 	f->nombreArchivo = new char(MAX_NOM_ARCH);
 	strcpy(f->nombreArchivo, nombre);
@@ -213,9 +193,9 @@ void crear_archivo(Cadena nombreArchivo, directorio dirActual)
 // Agrega de forma ordenada el archivo en la lista destino. Si sobreescribir es true, remplaza el archivo.
 file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir)
 {
-	if (dDestino->subdirectorios == NULL)
+	if (dDestino->archivos == NULL)
 	{
-		dDestino->archivos = new (nodo_lista_f);
+		dDestino->archivos = new (nodo_lista_file);
 		dDestino->archivos->archi = archivo;
 		dDestino->archivos->sig = NULL;
 		return archivo;
@@ -229,7 +209,7 @@ file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir)
 		dDestino->archivos = nLf;
 		return archivo;
 	}
-	if (strcmp(archivo->nombreArchivo, lf->archi->nombreArchivo) == 0)
+	if (strcmp(archivo->nombreArchivo, lf->archi->nombreArchivo) == 0 && strcmp(archivo->extencion, lf->archi->extencion) == 0)
 	{
 		if (sobreescribir)
 		{
@@ -243,14 +223,15 @@ file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir)
 			}
 			else
 			{
-				cout << "El archivo a sobreescribir es de solo lectura";
+				cout << "El archivo a sobreescribir es de solo lectura. \n";
 				return NULL;
 			}
 		}
 		else
-			return NULL;
+			cout << "El archivo ya existe en el directorio y no esta permitido sobreescribir. \n";
+		return NULL;
 	}
-	while (lf->sig != NULL && strcmp(archivo->nombreArchivo, lf->sig->archi->nombreArchivo) < 0)
+	while (lf->sig != NULL && strcmp(archivo->nombreArchivo, lf->sig->archi->nombreArchivo) > 0)
 	{
 		lf = lf->sig;
 	}
@@ -263,7 +244,7 @@ file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir)
 		lf->sig = nLf;
 		return archivo;
 	}
-	if (strcmp(archivo->nombreArchivo, lf->sig->archi->nombreArchivo) == 0)
+	if (strcmp(archivo->nombreArchivo, lf->sig->archi->nombreArchivo) == 0 && strcmp(archivo->extencion, lf->archi->extencion) == 0)
 	{
 		if (sobreescribir)
 		{
@@ -278,7 +259,7 @@ file agregar_archivo(directorio dDestino, file archivo, bool sobreescribir)
 			}
 			else
 			{
-				cout << "El archivo a sobreescribir es de solo lectura";
+				cout << "El archivo a sobreescribir es de solo lectura. \n";
 				return NULL;
 			}
 		}
@@ -318,43 +299,6 @@ file destruir_archivo(file a)
 	return a;
 }
 
-// Destruye el archivo dado.
-bool buscar_destruir_archivo_(Cadena nombre, Cadena ext, directorio dir)
-{
-	// Busca y destruye el archivo dado, si este existe.
-	lista_file lf = dir->archivos;
-	lista_file aux;
-	while ((lf != NULL) && ((strcmp(lf->archi->nombreArchivo, nombre) != 0) || (strcmp(lf->archi->extencion, ext) != 0)))
-	{
-		aux = lf;
-		lf = lf->sig;
-	}
-	if (lf == NULL)
-	{
-		cout << "NO existe el archivo.\n";
-		return false;
-	}
-	else if (lf->archi->atr == Lectura)
-	{
-		cout << "No es posible eliminar el archivo " << lf->archi->nombreArchivo << ", ya que es de solo lectura. \n";
-		return false;
-	}
-	else if (dir->archivos == lf)
-	{
-		dir->archivos = lf->sig;
-		lf->archi = destruir_archivo(lf->archi);
-		delete lf;
-		return true;
-	}
-	else
-	{
-		aux->sig = lf->sig;
-		lf->archi = destruir_archivo(lf->archi);
-		delete lf;
-		return true;
-	}
-}
-
 /* -- MANIPULAR ARCHIVOS Y DIRECTORIOS --*/
 
 // Mueve un subdirectorio o archivo a una destino dado.
@@ -384,11 +328,18 @@ bool mover_elemento(Cadena nombre, Cadena nomDestino, directorio dirActual, dire
 		}
 		else
 		{
-			// buscar archivo
-			file fbuscado = quitar_archivo(nombre, dirActual);
-			if (fbuscado != NULL)
+			Cadena nombreArchivo = strtok(nombre, ".");
+			Cadena ext = strtok(NULL, ".");
+			if (nombre == NULL || ext == NULL)
 			{
-				file x = agregar_archivo(dDestino, fbuscado, true);
+				// Se debe ingresar un nombre de archivo con su respectiva extencion en caso de querer mover un archivo.
+				return false;
+			}
+			// Busca el archivo, si existe fBuscado toma el valor del archivo a mover.
+			file fBuscado = quitar_archivo(nombreArchivo, ext, dirActual);
+			if (fBuscado != NULL)
+			{
+				agregar_archivo(dDestino, fBuscado, true);
 				return true;
 			}
 			else
@@ -457,20 +408,15 @@ directorio quitar_subdirectorio(Cadena nombre, directorio padre)
 }
 
 // Quita el archivo de nombre dado, de la lista de archivos del padre. Devuelve el archivo que ha sido desenganchado.
-file quitar_archivo(Cadena nombreArchivo, directorio padre)
+file quitar_archivo(Cadena nombre, Cadena ext, directorio padre)
 {
-	Cadena nombre = strtok(nombreArchivo, ".");
-	Cadena ext = strtok(NULL, ".");
-	if (nombre == NULL || ext == NULL)
-	{
-		return NULL;
-	}
-
+	// Desengancha los archivos de la lista de archivos, tomando en cuenta la pocision del archivo en la lista.
 	lista_file lf = padre->archivos;
 	if (lf == NULL)
 		return NULL;
 	if (strcmp(lf->archi->nombreArchivo, nombre) == 0 && strcmp(lf->archi->extencion, ext) == 0)
 	{
+		// Es el primero de la lista.
 		file result = lf->archi;
 		lista_file aBorrar = padre->archivos;
 		padre->archivos = padre->archivos->sig;
@@ -483,10 +429,12 @@ file quitar_archivo(Cadena nombreArchivo, directorio padre)
 	}
 	if (lf->sig == NULL)
 	{
+		// No existe un archivo con nombre menor en la lista.
 		return NULL;
 	}
 	else
 	{
+		// No es el primer ni ultimo elemento de la lista de archivos.
 		file result = lf->sig->archi;
 		lista_file aBorrar = lf->sig;
 		lf->sig = lf->sig->sig;
@@ -501,11 +449,15 @@ file quitar_archivo(Cadena nombreArchivo, directorio padre)
 directorio mover_puntero_a_destino(Cadena dirDestino, directorio dirRaiz)
 {
 	// Se da un puntero al directorio RAIZ para realizar la busqueda del directorio destino.
+	Cadena destTemp = new char[MAX_COMANDO];
+	strcpy(destTemp, dirDestino);
 	directorio dirFinal = dirRaiz;
-	Cadena head = strtok(dirDestino, "/");
+
+	Cadena head = strtok(destTemp, "/");
 	Cadena tail = strtok(NULL, "/");
 	if (strcmp(head, "RAIZ") != 0)
 	{
+		delete destTemp;
 		return NULL;
 	}
 	while (tail != NULL && dirFinal != NULL)
@@ -516,7 +468,7 @@ directorio mover_puntero_a_destino(Cadena dirDestino, directorio dirRaiz)
 		head = tail;
 		tail = strtok(NULL, "/");
 	}
-	cout << "encontre el directorio? " << dirFinal->nombrecarpeta;
+	delete destTemp;
 	return dirFinal;
 }
 
@@ -541,25 +493,29 @@ directorio ir_directorio(directorio dir, Cadena nombreDir)
 bool pertenece_al_path(Cadena pathDestino, directorio dir, Cadena nombreCarpeta)
 {
 	// Obtengo la cadena del path actual para compararla con la del path aBorrar.
-	Cadena pathActual = obtener_path(pathActual, dir);
+	Cadena pathActual = new char[MAX_COMANDO];
+	strcpy(pathActual, "");
+	pathActual = obtener_path(pathActual, dir);
 	strcat(pathActual, "/");
 	strcat(pathActual, nombreCarpeta);
 	unsigned int lenActual = strlen(pathActual);
 	unsigned int lenDestino = strlen(pathDestino);
-
 	// Si el pathActual es mayor al pathDestino, pathDestino no es subdirectorio del actual.
-	if (pathActual > pathDestino)
+	if (lenActual > lenDestino)
 	{
+		delete pathActual;
 		return false;
 	}
-	else if (strncmp(pathActual, pathDestino, lenDestino) == 0)
+	else if (strncmp(pathActual, pathDestino, lenActual) == 0)
 	{
 		// Si son iguales pathDestino es subdirectorio del actual.
+		delete pathActual;
 		return true;
 	}
 	else
 	{
 		// No comparten path.
+		delete pathActual;
 		return false;
 	}
 }
@@ -610,25 +566,17 @@ directorio existe_directorio(Cadena nombre, directorio dir)
 }
 
 // Comprueba la existencia del archivo pasado.// BORRAR
-file existe_archivo(Cadena nombreArchivo, directorio dir)
+file existe_archivo(Cadena nombre, Cadena ext, directorio dir)
 {
 	// Devuelve el archivo en caso de encontrarlo, NULL en caso contrario.
 	lista_file fl = dir->archivos;
-	Cadena aux = new char[4];
-	Cadena nombre = strtok(nombreArchivo, ".");
-	Cadena ext = strtok(NULL, ".");
-	if (nombre == NULL)
-	{
-		// No existe texto antes del punto o despues del mismo.
-		cout << "No se ingreso un nombre de archivo correcto.";
-		return NULL;
-	}
+	Cadena aux = new char[MAX_EXT_ARCH];
 	if (fl == NULL)
 	{
 		delete[] aux;
 		return NULL;
 	}
-	else if (ext == NULL)
+	if (ext == NULL)
 	{
 		strcpy(aux, "txt");
 	}
@@ -649,6 +597,7 @@ file existe_archivo(Cadena nombreArchivo, directorio dir)
 	else
 	{
 		delete[] aux;
+		cout << "Existe dir devuelve el siguiente archivo: " << fl->archi->nombreArchivo << "\n";
 		return fl->archi;
 	}
 }
@@ -678,13 +627,15 @@ void imprimir_path(directorio dir)
 
 // Imprime todos los subdirectorios de dir en forma ordenada y recursivamente.
 void imprimir_directorio(directorio dir)
-{ /*Crear funcion que genere una lista de archivos ordenada*/
+{
+	cout << "|-";
 	imprimir_path(dir);
 	cout << "\n";
 	lista_file lf = dir->archivos;
 	while (lf != NULL)
 	{
 		// Imprimo el camino del directorio y al final agreaga el archivo en caso de que exista.
+		cout << "|-";
 		imprimir_path(dir);
 		cout << "/";
 		imprimir_nombre_archivo(lf->archi);
@@ -988,4 +939,8 @@ bool remplazar_texto(file archivo, Cadena texto, Cadena texto2)
 		cout << texto << " no forma parte del texto del archivo.";
 		return false;
 	}
+}
+
+Cadena nombre_actual(directorio dirActual){
+	return dirActual->nombrecarpeta;
 }

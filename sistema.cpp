@@ -32,6 +32,34 @@ TipoRet CREARSISTEMA(Sistema &s)
 	s->raiz = crear_directorio(nombre, NULL);
 	delete[] nombre;
 	s->actual = s->raiz;
+	/* 	for (int i = 0; i < 20; i++)
+		{
+			Cadena par = new char[30000];
+			sprintf(par, "%d", i);
+			strcat(par, ".txt");
+			Cadena del = new char[30000];
+			strcpy(del, par);
+			cout << "----" << par << "\n";
+			CREATEFILE(s, par);
+			DELETE(s, del);
+			delete[] del;
+			delete[] par;
+		}
+
+		for (int i = 5000; i > 0; i--)
+		{
+			Cadena par = new char[30000];
+			sprintf(par, "%d", i);
+			MKDIR(s, par);
+			cout << "----" << par << "\n";
+			if (i % 5 == 0)
+			{
+				CD(s, par);
+				cout << "Esta adentro \n";
+			}
+			// RMDIR(s, par);
+			delete par;
+		} */
 	return OK;
 }
 
@@ -39,7 +67,6 @@ TipoRet DESTRUIRSISTEMA(Sistema &s)
 {
 	// Destruye el sistema, liberando la memoria asignada a las estructuras que datos que constituyen el file system.
 	// Para mas detalles ver letra.
-
 	s->raiz = destruir_directorio(s->raiz);
 	delete s;
 	return OK;
@@ -73,7 +100,7 @@ TipoRet CD(Sistema &s, Cadena nombreDirectorio)
 		directorio dir = existe_directorio(nombreDirectorio, s->actual);
 		if (dir == NULL)
 		{
-			cout << "No existe el directorio dentro del directorio actual./n";
+			cout << "No existe el directorio dentro del directorio actual.";
 			return ERROR;
 		}
 		else
@@ -86,7 +113,12 @@ TipoRet CD(Sistema &s, Cadena nombreDirectorio)
 
 TipoRet MKDIR(Sistema &s, Cadena nombreDirectorio)
 {
-	if (existe_directorio(nombreDirectorio, s->actual) != NULL)
+	if (strlen(nombreDirectorio) > MAX_NOM_DIR)
+	{
+		cout << "El nombre de archivo debe ser menor a " << MAX_NOM_DIR;
+		return ERROR;
+	}
+	else if (existe_directorio(nombreDirectorio, s->actual) != NULL)
 	{ // Compruebo que no exista el nombre de directorio
 		cout << "Ese nombre de directorio esta usado";
 		return ERROR;
@@ -95,8 +127,6 @@ TipoRet MKDIR(Sistema &s, Cadena nombreDirectorio)
 	{
 		// Creo el nuevo directorio sin moverme de mi posicion.
 		crear_directorio(nombreDirectorio, s->actual);
-		cout << "\n";
-		DIR(s, "/S");
 		return OK;
 	}
 }
@@ -124,8 +154,6 @@ TipoRet MOVE(Sistema &s, Cadena nombre, Cadena directorioDestino)
 	// Para mas detalles ver letra.
 	if (mover_elemento(nombre, directorioDestino, s->actual, s->raiz))
 	{
-		cout << "\n";
-		DIR(s, "/S");
 		return OK;
 	}
 	return ERROR;
@@ -137,14 +165,15 @@ TipoRet DIR(Sistema &s, Cadena parametro)
 	// Para mas detalles ver letra.
 
 	if (parametro == NULL)
-	{ // Imprime el arbol de directorios de forma ordenada.
+	{
+		// Imprime el directorio mostrando permisos de archivos.
 		imprimir_directorio_v2(s->actual);
 		return OK;
 	}
 	else if (strcmp(parametro, "/S") == 0)
-	{ // Imprime el directorio mostrando permisos de archivos.
-		directorio dir = s->actual;
-		imprimir_directorio(dir);
+	{
+		// Imprime el arbol de directorios de forma ordenada.
+		imprimir_directorio(s->actual);
 		return OK;
 	}
 	else
@@ -156,17 +185,27 @@ TipoRet DIR(Sistema &s, Cadena parametro)
 TipoRet CREATEFILE(Sistema &s, Cadena nombreArchivo)
 {
 	// Crea un nuevo archivo en el directorio actual.
-	// Para mas detalles ver letra.
-
-	if (existe_archivo(nombreArchivo, s->actual) != NULL)
+	// Si no se ingresa una extencion para el archivo, este sera creado como texto, con la extencion (txt).
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL || strlen(nombre) > MAX_NOM_ARCH)
+	{
+		// No existe texto antes del punto(en caso de que se inserte una exencion).
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	else if (ext != NULL && strlen(ext) > MAX_EXT_ARCH)
+	{
+		cout << "La extencion debe ser de maximo " << MAX_EXT_ARCH << " caracteres.";
+	}
+	else if (existe_archivo(nombre, ext, s->actual) != NULL)
 	{ // Compruebo que no exista el nombre de archivo.
-		cout << "Ya existe un archivo con ese nombre dentro del directorio actual\n";
+		cout << "Ya existe un archivo con ese nombre en el directorio actual.";
 		return ERROR;
 	}
 	else
 	{ // Separo la extencion y nombre del parametro.
-
-		crear_archivo(nombreArchivo, s->actual);
+		crear_archivo(nombre, ext, s->actual);
 		return OK;
 	}
 }
@@ -174,10 +213,16 @@ TipoRet CREATEFILE(Sistema &s, Cadena nombreArchivo)
 TipoRet DELETE(Sistema &s, Cadena nombreArchivo)
 {
 	// Elimina un archivo del directorio actual, siempre y cuando no sea de sólo lectura.
-	// Para mas detalles ver letra.
-	// Separo la extencion y el nombre del paramentro.
-
-	file archivo = quitar_archivo(nombreArchivo, s->actual);
+	// El nombre de archivo debe ser ingresado con su extencion.
+	// Quita de la lista el archivo dado, devuelve el archivo a borrar.
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL || ext == NULL)
+	{
+		// Se debe ingresar un nombre de archivo con su respectiva extencion.
+		return ERROR;
+	}
+	file archivo = quitar_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		destruir_archivo(archivo);
@@ -185,7 +230,7 @@ TipoRet DELETE(Sistema &s, Cadena nombreArchivo)
 	}
 	else
 	{
-		cout << "No existe " << nombreArchivo << " en el directorio, compruebe que haya ingresado el nombre y la extencion correctamente.\n";
+		cout << "No existe " << nombreArchivo << " en el directorio.";
 		return ERROR;
 	}
 }
@@ -194,8 +239,15 @@ TipoRet ATTRIB(Sistema &s, Cadena nombreArchivo, Cadena parametro)
 {
 	// Agrega un texto al comienzo del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (cambiar_atributo(archivo, parametro))
@@ -204,7 +256,7 @@ TipoRet ATTRIB(Sistema &s, Cadena nombreArchivo, Cadena parametro)
 		}
 		else
 		{
-			cout << "No se ingreso un parametro correcto. \n";
+			cout << "No se ingreso un parametro correcto.";
 			return ERROR;
 		}
 	}
@@ -218,8 +270,15 @@ TipoRet IC(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Agrega un texto al final del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (insertar_texto_inicio(archivo, texto))
@@ -242,8 +301,15 @@ TipoRet IF(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Agrega un texto al final del archivo NombreArchivo.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (insertar_texto_final(archivo, nombreArchivo))
@@ -266,8 +332,15 @@ TipoRet DC(Sistema &s, Cadena nombreArchivo, int k)
 {
 	// Elimina los a lo sumo K primeros caracteres del archivo parámetro.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (eliminar_K_elementos_iniciales(archivo, k))
@@ -290,8 +363,15 @@ TipoRet DF(Sistema &s, Cadena nombreArchivo, int k)
 {
 	// Elimina los a lo sumo K últimos caracteres del archivo parámetro.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (eliminar_K_elementos_finales(archivo, k))
@@ -314,8 +394,15 @@ TipoRet TYPE(Sistema &s, Cadena nombreArchivo)
 {
 	// Imprime el contenido del archivo parámetro.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (imprimir_texto(archivo))
@@ -338,8 +425,15 @@ TipoRet SEARCH(Sistema &s, Cadena nombreArchivo, Cadena texto)
 {
 	// Busca dentro del archivo la existencia del texto.
 	// Para mas detalles ver letra.
-
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (search_texto(archivo, texto))
@@ -362,7 +456,15 @@ TipoRet REPLACE(Sistema &s, Cadena nombreArchivo, Cadena texto1, Cadena texto2)
 {
 	// Busca y reemplaza dentro del archivo la existencia del texto1 por el texto2.
 	// Para mas detalles ver letra.
-	file archivo = existe_archivo(nombreArchivo, s->actual);
+	Cadena nombre = strtok(nombreArchivo, ".");
+	Cadena ext = strtok(NULL, ".");
+	if (nombre == NULL)
+	{
+		// No existe texto antes del punto o despues del mismo.
+		cout << "No se ingreso un nombre de archivo correcto.";
+		return ERROR;
+	}
+	file archivo = existe_archivo(nombre, ext, s->actual);
 	if (archivo != NULL)
 	{
 		if (remplazar_texto(archivo, texto1, texto2))
@@ -379,4 +481,10 @@ TipoRet REPLACE(Sistema &s, Cadena nombreArchivo, Cadena texto1, Cadena texto2)
 		cout << "No existe " << nombreArchivo << " en el directorio.";
 		return ERROR;
 	}
+}
+
+void propmt(Sistema &s)
+{
+	Cadena nomActual = nombre_actual(s->actual);
+	cout << "[ ~" << nomActual << " ]";
 }
